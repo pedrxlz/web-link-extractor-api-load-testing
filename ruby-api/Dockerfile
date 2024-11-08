@@ -3,7 +3,6 @@ LABEL      maintainer="Sawood Alam <@ibnesayeed>"
 
 ENV        LANG C.UTF-8
 ENV        REDIS_URL="redis://localhost:6379"
-ENV        USE_CACHE="true"
 
 WORKDIR    /app
 COPY       Gemfile /app/

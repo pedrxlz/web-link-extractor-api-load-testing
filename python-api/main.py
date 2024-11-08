@@ -1,5 +1,6 @@
 import json
 import os
+import ssl
 import sys
 from urllib.parse import urljoin
 
@@ -12,18 +13,27 @@ app = Flask(__name__)
 redis_conn = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 use_cache = os.getenv("USE_CACHE", "false").lower() == "true"
 
+# Cria um contexto SSL que permite a renegociação legada
+ssl_context = ssl.create_default_context()
+ssl_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
+
 def extract_links(url):
-    res = requests.get(url)
-    soup = BeautifulSoup(res.text, "html.parser")
-    base = url
-    # TODO: Update base if a <base> element is present with the href attribute
-    links = []
-    for link in soup.find_all("a"):
-        links.append({
-            "text": " ".join(link.text.split()) or "[IMG]",
-            "href": urljoin(base, link.get("href"))
-        })
-    return links
+    try:
+        # Faz a requisição com a verificação SSL desativada
+        res = requests.get(url, verify=False)  # A desativação da verificação SSL é temporária
+        soup = BeautifulSoup(res.text, "html.parser")
+        base = url
+        # TODO: Update base if a <base> element is present with the href attribute
+        links = []
+        for link in soup.find_all("a"):
+            links.append({
+                "text": " ".join(link.text.split()) or "[IMG]",
+                "href": urljoin(base, link.get("href"))
+            })
+        return links
+    except requests.exceptions.SSLError as e:
+        print(f"Erro SSL: {e}")
+        return []
 
 @app.route("/")
 def index():

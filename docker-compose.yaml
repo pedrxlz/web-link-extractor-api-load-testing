@@ -2,21 +2,21 @@ version: "3"
 
 services:
   api:
-    image: linkextractor-api:step6-python
+    image: linkextractor-api:python
     build: ./python-api
     ports:
-      - "4567:4567"
+      - "5000:5000"
     environment:
       - REDIS_URL=redis://redis:6379
       - USE_CACHE=false
     volumes:
       - ./logs:/app/logs
   web:
-    image: linkextractor-web:step6-php
+    image: linkextractor-web:php
     build: ./www
     ports:
       - "80:80"
     environment:
-      - API_ENDPOINT=http://api:4567/api/
+      - API_ENDPOINT=http://api:5000/api/
   redis:
     image: redis
