@@ -13,14 +13,12 @@ app = Flask(__name__)
 redis_conn = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 use_cache = os.getenv("USE_CACHE", "false").lower() == "true"
 
-# Cria um contexto SSL que permite a renegociação legada
 ssl_context = ssl.create_default_context()
 ssl_context.options |= ssl.OP_LEGACY_SERVER_CONNECT
 
 def extract_links(url):
     try:
-        # Faz a requisição com a verificação SSL desativada
-        res = requests.get(url, verify=False)  # A desativação da verificação SSL é temporária
+        res = requests.get(url, verify=False)  
         soup = BeautifulSoup(res.text, "html.parser")
         base = url
         # TODO: Update base if a <base> element is present with the href attribute

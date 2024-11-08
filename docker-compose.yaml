@@ -2,21 +2,49 @@ version: "3"
 
 services:
   api:
-    image: linkextractor-api:python
-    build: ./python-api
+    image: ${API_IMAGE}
+    build: ./${API_SERVICE}
     ports:
-      - "5000:5000"
+      - "${API_PORT}:${API_PORT}"
     environment:
       - REDIS_URL=redis://redis:6379
-      - USE_CACHE=false
+      - USE_CACHE=${USE_CACHE}
     volumes:
       - ./logs:/app/logs
+
   web:
     image: linkextractor-web:php
     build: ./www
     ports:
       - "80:80"
     environment:
-      - API_ENDPOINT=http://api:5000/api/
+      - API_ENDPOINT=${API_ENDPOINT}
   redis:
     image: redis
+
+  locust:
+    command: -f /mnt/locust/locustfile.py
+    depends_on:
+      - api
+    environment:
+      - LOCUST_FILE=/mnt/locust/locustfile.py
+      - LOCUST_HOST=http://web:80
+    image: locustio/locust
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./locustfile.py:/mnt/locust/locustfile.py
+
+  locust-runner:
+    build: ./locust-runner
+    depends_on:
+      - locust
+    volumes:
+      - ./locustfile.py:/mnt/locust/locustfile.py
+      - ./results:/mnt/locust/results
+    environment:
+      - LOCUST_FILE=/mnt/locust/locustfile.py
+      - LOCUST_HOST=http://web:80
+      - RUN_TIME=1m
+      - API_SERVICE=${API_SERVICE}
+      - USE_CACHE=${USE_CACHE}
